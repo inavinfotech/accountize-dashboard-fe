@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient: Indigo to Blue -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    
+    <!-- Shadow for the Wallet Icon -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#0f172a" flood-opacity="0.3" />
+    </filter>
+
+    <!-- Card Gradient -->
+    <linearGradient id="card-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Card / Icon shape -->
+  <rect width="512" height="512" rx="120" fill="url(#bg-grad)" />
+
+  <!-- Wallet & Card graphic group with shadow -->
+  <g filter="url(#shadow)">
+    <!-- Back Card (Poking out of the wallet) -->
+    <rect x="190" y="125" width="140" height="90" rx="14" fill="url(#card-grad)" transform="rotate(-15 260 170)" />
+    <!-- Magnetic strip on credit card -->
+    <rect x="190" y="140" width="140" height="18" fill="#0f172a" transform="rotate(-15 260 170)" opacity="0.8" />
+    
+    <!-- Main Wallet Body -->
+    <rect x="128" y="180" width="256" height="192" rx="28" fill="#ffffff" />
+    
+    <!-- Wallet Pocket Flap (Clasp) -->
+    <path d="M 280 236 L 384 236 C 390 236, 396 242, 396 248 L 396 308 C 396 314, 390 320, 384 320 L 280 320 C 262 320, 248 306, 248 288 L 248 268 C 248 250, 262 236, 280 236 Z" fill="#f1f5f9" />
+    
+    <!-- Clasp Metal Button -->
+    <circle cx="295" cy="278" r="14" fill="url(#bg-grad)" />
+    <circle cx="295" cy="278" r="6" fill="#ffffff" />
+    
+    <!-- Decorative stitching / accent line on the wallet edge -->
+    <rect x="144" y="196" width="224" height="160" rx="18" fill="none" stroke="#cbd5e1" stroke-width="4" stroke-dasharray="8 6" />
+  </g>
+</svg>
