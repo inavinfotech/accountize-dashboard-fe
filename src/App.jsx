@@ -1,4 +1,4 @@
-import { Component } from 'react'
+import { Component, useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext'
 import Overview from './pages/Overview'
@@ -42,14 +42,9 @@ class ErrorBoundary extends Component {
           padding: 24,
           textAlign: 'center'
         }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: '50%', background: 'var(--rose-bg)',
-            color: 'var(--rose)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16
-          }}>
-            <AlertTriangle size={28} />
-          </div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 8 }}>Something went wrong</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', maxWidth: 460, marginBottom: 20 }}>
+          <AlertTriangle size={48} color="var(--rose)" style={{ marginBottom: 16 }} />
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 8 }}>Dashboard Interface Error</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', maxWidth: 460, marginBottom: 20 }}>
             {this.state.error?.message || 'An unexpected rendering error occurred in the Super Admin Dashboard.'}
           </p>
           <button
@@ -90,6 +85,29 @@ function AdminProtectedRoute({ children }) {
 function AdminLayout() {
   const { user, signOutAdmin } = useAdminAuth()
   const location = useLocation()
+
+  // Synchronously reset scroll position to top across all scroll containers on route change
+  useLayoutEffect(() => {
+    const scrollToTop = () => {
+      const mainEl = document.querySelector('.admin-main')
+      if (mainEl) {
+        mainEl.scrollTop = 0
+        mainEl.scrollLeft = 0
+      }
+      const contentEl = document.querySelector('.admin-content')
+      if (contentEl) {
+        contentEl.scrollTop = 0
+      }
+      window.scrollTo(0, 0)
+      document.documentElement.scrollTop = 0
+      document.body.scrollTop = 0
+    }
+
+    scrollToTop()
+    requestAnimationFrame(scrollToTop)
+    const timer = setTimeout(scrollToTop, 50)
+    return () => clearTimeout(timer)
+  }, [location.pathname])
 
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: 'Overview', shortLabel: 'Overview' },
