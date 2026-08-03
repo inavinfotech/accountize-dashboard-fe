@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAdminAuth } from '../context/AdminAuthContext'
 import { useNavigate } from 'react-router-dom'
-import { Shield, Lock, Mail, AlertCircle, ArrowRight } from 'lucide-react'
+import { Lock, Mail, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react'
 
 export default function Login() {
   const { signInAdmin } = useAdminAuth()
@@ -9,6 +9,7 @@ export default function Login() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -29,109 +30,84 @@ export default function Login() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      width: '100vw',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'radial-gradient(circle at 50% 0%, #eef2ff 0%, #f8fafc 70%)',
-      padding: '20px'
-    }}>
-      <div className="animate-in" style={{
-        width: '100%',
-        maxWidth: 420,
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border-color)',
-        borderRadius: 'var(--radius-xl)',
-        padding: '36px',
-        boxShadow: 'var(--shadow-lg)'
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{
-            width: 54,
-            height: 54,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            color: '#fff',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 16,
-            boxShadow: '0 0 20px rgba(59,130,246,0.4)'
-          }}>
-            <Shield size={28} />
+    <div className="auth-container single-layout">
+      <div className="auth-form-side">
+        <div className="auth-card animate-in">
+          {/* Accountify Header Logo */}
+          <div className="auth-header-logo">
+            <img src="/logo.svg" alt="Accountify Admin Logo" className="auth-logo-icon" />
+            <h1>Accountify Admin</h1>
+            <p>Super Admin Command Center</p>
           </div>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Accountify Admin</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: 4 }}>
-            Super Admin Command Center Login
-          </p>
+
+          <h2 className="auth-title">Sign in to Command Center</h2>
+
+          {error && (
+            <div className="auth-alert error">
+              <AlertCircle size={16} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <div className="auth-form-group">
+              <label className="auth-label" htmlFor="admin-email">Admin Email</label>
+              <div className="auth-input-wrapper">
+                <Mail size={16} className="auth-input-icon" />
+                <input
+                  id="admin-email"
+                  type="email"
+                  className="auth-input"
+                  placeholder="admin@accountify.app"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="auth-form-group">
+              <label className="auth-label" htmlFor="admin-password">Password</label>
+              <div className="auth-input-wrapper">
+                <Lock size={16} className="auth-input-icon" />
+                <input
+                  id="admin-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="auth-input"
+                  placeholder="••••••••••••"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="auth-toggle-password"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  onClick={() => setShowPassword(prev => !prev)}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" className="auth-submit-btn" disabled={loading}>
+              {loading ? (
+                <span className="auth-spinner"></span>
+              ) : (
+                <>
+                  Login to Command Center <ArrowRight size={16} style={{ marginLeft: 6 }} />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="auth-footer">
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Protected by Enterprise Role-Based Access Control
+            </p>
+          </div>
         </div>
-
-        {error && (
-          <div style={{
-            background: 'var(--rose-bg)',
-            border: '1px solid rgba(244,63,94,0.3)',
-            color: 'var(--rose)',
-            padding: '12px 14px',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '0.825rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            marginBottom: 20
-          }}>
-            <AlertCircle size={16} style={{ flexShrink: 0 }} />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
-              Admin Email
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Mail size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 14, top: 12 }} />
-              <input
-                type="email"
-                className="search-input"
-                style={{ width: '100%', paddingLeft: 40, height: 42 }}
-                placeholder="admin@accountify.app"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
-              Password
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 14, top: 12 }} />
-              <input
-                type="password"
-                className="search-input"
-                style={{ width: '100%', paddingLeft: 40, height: 42 }}
-                placeholder="••••••••••••"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={loading}
-            style={{ width: '100%', justifyContent: 'center', height: 42, marginTop: 8 }}
-          >
-            {loading ? 'Authenticating...' : <>Login to Command Center <ArrowRight size={16} /></>}
-          </button>
-        </form>
       </div>
     </div>
   )

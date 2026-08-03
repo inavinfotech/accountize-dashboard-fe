@@ -26,25 +26,38 @@ export async function fetchUserProfiles() {
   const profileMap = {}
 
   try {
-    // 1. Try public.user_profiles view (from auth.users)
+    // 1. Try public.user_profiles view/table (from auth.users)
     const { data: viewData, error: viewError } = await supabase
       .from('user_profiles')
-      .select('user_id, display_name, email, created_at')
+      .select('*')
+
+    if (viewError) {
+      console.warn('[fetchUserProfiles] Warning fetching public.user_profiles:', viewError.message || viewError)
+    }
 
     if (!viewError && viewData && viewData.length > 0) {
       viewData.forEach(p => {
-        if (p.user_id) {
-          profileMap[p.user_id] = {
-            user_id: p.user_id,
-            displayName: p.display_name || p.email || `User #${p.user_id.slice(0, 8)}`,
-            email: p.email || null,
-            created_at: p.created_at || new Date().toISOString()
+        const uid = p.user_id || p.id
+        if (uid) {
+          const email = p.email || null
+          const displayName = p.display_name || p.full_name || p.name || p.username || email || `User #${String(uid).slice(0, 8)}`
+          profileMap[uid] = {
+            user_id: uid,
+            displayName,
+            email,
+            created_at: p.created_at || p.inserted_at || new Date().toISOString()
           }
         }
       })
-      return profileMap
+      if (Object.keys(profileMap).length > 0) {
+        return profileMap
+      }
+    } else {
+      console.warn('[fetchUserProfiles] public.user_profiles view returned 0 rows. Check if view needs security_invoker = false to read auth.users.')
     }
-  } catch (_) { /* ignore view fallback */ }
+  } catch (err) {
+    console.warn('[fetchUserProfiles] Exception reading user_profiles:', err)
+  }
 
   // 2. Fallback: Query accounts table
   try {

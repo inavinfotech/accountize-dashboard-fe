@@ -494,7 +494,7 @@ export default function SupportTickets() {
       {/* ── Ticket Details & Reply Modal ─────────────────────────────────── */}
       {activeTicket && (
         <div className="modal-backdrop animate-in" onClick={() => { setActiveTicket(null); setReplyText(''); }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 600 }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 'min(720px, 100%)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{

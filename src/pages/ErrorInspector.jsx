@@ -552,7 +552,7 @@ export default function ErrorInspector() {
       {/* ── Stack Trace Inspector Modal ──────────────────────────────────── */}
       {selectedStack && (
         <div className="modal-backdrop animate-in" onClick={() => setSelectedStack(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 650 }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 'min(760px, 100%)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--rose)', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <AlertTriangle size={18} /> Error Trace Inspector

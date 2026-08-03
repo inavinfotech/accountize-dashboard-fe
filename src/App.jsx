@@ -108,7 +108,7 @@ function AdminLayout() {
           <div className="sidebar-logo">
             <img src="/logo.svg" alt="Accountify Logo" className="sidebar-logo-icon" />
             <div className="sidebar-logo-text">
-              <h1>Accountify <span className="admin-logo-badge">ADMIN</span></h1>
+              <h1>Accountify Admin</h1>
               <p>Super Admin Center</p>
             </div>
           </div>
@@ -153,7 +153,7 @@ function AdminLayout() {
           <div className="sidebar-logo">
             <img src="/logo.svg" alt="Accountify Logo" className="sidebar-logo-icon" style={{ width: 30, height: 30 }} />
             <div className="sidebar-logo-text">
-              <h1 style={{ fontSize: '0.95rem' }}>Accountify <span className="admin-logo-badge">ADMIN</span></h1>
+              <h1 style={{ fontSize: '0.95rem' }}>Accountify Admin</h1>
             </div>
           </div>
 

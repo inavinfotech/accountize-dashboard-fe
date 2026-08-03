@@ -464,7 +464,7 @@ export default function Governance() {
       {/* ── Token Details Modal ──────────────────────────────────────────── */}
       {selectedLink && (
         <div className="modal-backdrop animate-in" onClick={() => setSelectedLink(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 'min(640px, 100%)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Link2 size={18} color="var(--primary)" />

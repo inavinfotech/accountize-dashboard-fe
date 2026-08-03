@@ -540,7 +540,7 @@ export default function UserManager() {
       {/* ── User Inspect Modal ───────────────────────────────────────────── */}
       {selectedUser && (
         <div className="modal-backdrop animate-in" onClick={() => setSelectedUser(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 540 }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 'min(640px, 100%)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{
