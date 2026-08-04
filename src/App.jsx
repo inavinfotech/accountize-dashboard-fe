@@ -122,9 +122,9 @@ function AdminLayout() {
       <aside className="admin-sidebar">
         <div className="admin-logo">
           <div className="sidebar-logo">
-            <img src="/logo.svg" alt="Accountify Logo" className="sidebar-logo-icon" />
+            <img src="/logo.svg" alt="Accountize Logo" className="sidebar-logo-icon" />
             <div className="sidebar-logo-text">
-              <h1>Accountify Admin</h1>
+              <h1>Accountize Admin</h1>
               <p>Super Admin Center</p>
             </div>
           </div>
@@ -167,16 +167,15 @@ function AdminLayout() {
         {/* App Top Bar */}
         <header className="admin-header">
           <div className="sidebar-logo">
-            <img src="/logo.svg" alt="Accountify Logo" className="sidebar-logo-icon" style={{ width: 30, height: 30 }} />
+            <img src="/logo.svg" alt="Accountize Logo" className="sidebar-logo-icon" style={{ width: 30, height: 30 }} />
             <div className="sidebar-logo-text">
-              <h1 style={{ fontSize: '0.95rem' }}>Accountify Admin</h1>
+              <h1 style={{ fontSize: '0.95rem' }}>Accountize Admin</h1>
             </div>
           </div>
-
-          <div className="desktop-breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            <span>Accountify Command Center</span>
-            <span>/</span>
-            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>admin.accountify.app</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+            <span>Accountize Command Center</span>
+            <span>•</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>admin.accountize.app</span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

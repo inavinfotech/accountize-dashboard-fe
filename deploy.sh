@@ -3,7 +3,7 @@
 # Exit on error
 set -e
 
-echo "🚀 Starting Accountify Dashboard deployment process..."
+echo "🚀 Starting Accountize Dashboard deployment process..."
 
 # Get the directory of this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,6 +17,6 @@ npm run build
 
 # Deploy to Firebase
 echo "⚡ Deploying to Firebase Hosting..."
-firebase deploy --only hosting:accountify-dashboard
+firebase deploy --only hosting:dashboard-accountize
 
 echo "🎉 Dashboard deployment successful!"

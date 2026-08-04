@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['logo.svg', 'logo-192.png', 'logo-512.png', 'robots.txt'],
       manifest: {
-        short_name: "Accountify Admin",
-        name: "Accountify — Super Admin Command Center",
+        short_name: "Accountize Admin",
+        name: "Accountize — Super Admin Command Center",
         icons: [
           {
             src: "/logo-192.png",
@@ -36,7 +36,7 @@ export default defineConfig({
         background_color: "#0f172a",
         display: "standalone",
         theme_color: "#6366f1",
-        description: "Accountify Super Admin Command Center — Real-time analytics, runtime error tracking, user management, and tier governance."
+        description: "Accountize Super Admin Command Center — Real-time analytics, runtime error tracking, user management, and tier governance."
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],

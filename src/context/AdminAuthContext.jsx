@@ -14,7 +14,7 @@ export function AdminAuthProvider({ children }) {
     if (!userObj) return false
     // Checks if user metadata or app metadata contains is_admin flag, or email is explicit admin
     const isMetaAdmin = userObj.user_metadata?.is_admin === true || userObj.app_metadata?.is_admin === true
-    const isOwnerEmail = userObj.email?.endsWith('@inexarum.com') || userObj.email?.endsWith('@inexarum.in') || userObj.email === 'admin@accountify.app'
+    const isOwnerEmail = userObj.email?.endsWith('@inexarum.com') || userObj.email?.endsWith('@inexarum.in') || userObj.email === 'admin@accountize.app'
     return isMetaAdmin || isOwnerEmail
   }
 

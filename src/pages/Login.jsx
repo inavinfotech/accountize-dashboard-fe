@@ -33,10 +33,10 @@ export default function Login() {
     <div className="auth-container single-layout">
       <div className="auth-form-side">
         <div className="auth-card animate-in">
-          {/* Accountify Header Logo */}
+          {/* Accountize Header Logo */}
           <div className="auth-header-logo">
-            <img src="/logo.svg" alt="Accountify Admin Logo" className="auth-logo-icon" />
-            <h1>Accountify Admin</h1>
+            <img src="/logo.svg" alt="Accountize Admin Logo" className="auth-logo-icon" />
+            <h1>Accountize Admin</h1>
             <p>Super Admin Command Center</p>
           </div>
 
@@ -58,7 +58,7 @@ export default function Login() {
                   id="admin-email"
                   type="email"
                   className="auth-input"
-                  placeholder="admin@accountify.app"
+                  placeholder="admin@accountize.app"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required

@@ -1,5 +1,5 @@
 :root {
-  /* Accountify Standard Light/Slate Design System */
+  /* Accountize Standard Light/Slate Design System */
   --bg-primary: #f8fafc; /* Slate 50 */
   --bg-secondary: #ffffff;
   --bg-card: #ffffff;
@@ -469,7 +469,7 @@ a {
   background: var(--bg-secondary);
 }
 
-/* Modal backdrop & content matching Accountify standard */
+/* Modal backdrop & content matching Accountize standard */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -1006,7 +1006,7 @@ a {
   100% { background-position: -200% 0; }
 }
 
-/* ===== ACCOUNTIFY AUTHENTICATION SYSTEM STYLING ===== */
+/* ===== ACCOUNTIZE AUTHENTICATION SYSTEM STYLING ===== */
 .auth-container {
   min-height: 100vh;
   width: 100%;

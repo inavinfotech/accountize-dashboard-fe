@@ -8,7 +8,7 @@ import React from 'react'
 export default function LoadingScreen({ 
   label = 'Loading Command Center...', 
   fullScreen = true,
-  sublabel = 'Connecting to Accountify Admin System'
+  sublabel = 'Connecting to Accountize Admin System'
 }) {
   return (
     <div
