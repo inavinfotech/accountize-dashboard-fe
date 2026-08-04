@@ -69,7 +69,7 @@ export default function Overview() {
       // Database counts
       const { count: txCount, data: txData } = await supabase.from('transactions').select('amount, created_at')
       const { count: linksCount } = await supabase.from('shared_links').select('*', { count: 'exact', head: true })
-      const { count: errCount } = await supabase.from('error_logs').select('*', { count: 'exact', head: true, filter: 'resolved.eq.false' })
+      const { count: errCount } = await supabase.from('error_logs').select('*', { count: 'exact', head: true }).or('resolved.eq.false,resolved.is.null')
       const { count: ticketCount } = await supabase.from('error_logs').select('*', { count: 'exact', head: true }).ilike('error_message', '%[Support Ticket]%')
 
       // Total transaction sum volume

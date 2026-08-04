@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase, fetchUserProfiles } from '../lib/supabase'
+import LoadingScreen from '../components/LoadingScreen'
 import {
-  Users, Search, RefreshCw, Shield, Award, Ban, UserCheck,
+  Users, UserCheck, ShieldAlert, ShieldCheck, Mail, Search,
+  Filter, Calendar, ExternalLink, AlertTriangle, ArrowUpRight, Lock, Key, RefreshCw, Shield, Award, Ban,
   TrendingUp, Activity, CheckCircle, Eye, FileText, Share2, Layers
 } from 'lucide-react'
 import {
@@ -429,9 +431,7 @@ export default function UserManager() {
         </div>
 
         {loading ? (
-          <div style={{ padding: '36px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            Loading user registry...
-          </div>
+          <LoadingScreen fullScreen={false} label="Loading User Registry..." sublabel="Fetching accounts & subscription statuses" />
         ) : filteredUsers.length === 0 ? (
           <div style={{ padding: '36px', textAlign: 'center', color: 'var(--text-secondary)' }}>
             No registered users found.

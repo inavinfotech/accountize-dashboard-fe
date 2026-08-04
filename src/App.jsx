@@ -1,6 +1,8 @@
 import { Component, useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext'
+import NetworkStatusBanner from './components/NetworkStatusBanner'
+import LoadingScreen from './components/LoadingScreen'
 import Overview from './pages/Overview'
 import AnalyticsStream from './pages/AnalyticsStream'
 import ErrorInspector from './pages/ErrorInspector'
@@ -68,11 +70,7 @@ function AdminProtectedRoute({ children }) {
   const { user, isAdmin, loading } = useAdminAuth()
 
   if (loading) {
-    return (
-      <div style={{ display: 'flex', height: '100vh', width: '100vw', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
-        <div style={{ color: 'var(--primary)', fontWeight: 600 }}>Loading Command Center...</div>
-      </div>
-    )
+    return <LoadingScreen label="Loading Command Center..." sublabel="Verifying admin credentials & permissions" fullScreen={true} />
   }
 
   if (!user || !isAdmin) {
@@ -228,6 +226,7 @@ function AdminLayout() {
           )
         })}
       </nav>
+      <NetworkStatusBanner />
     </div>
   )
 }

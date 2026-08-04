@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase, fetchUserProfiles } from '../lib/supabase'
+import LoadingScreen from '../components/LoadingScreen'
 import {
   AlertTriangle, CheckCircle, RefreshCw, Search, ShieldAlert,
   Filter, Eye, Clock, TrendingUp, BarChart2, Activity, User, Globe
@@ -470,9 +471,7 @@ export default function ErrorInspector() {
             </pre>
           </div>
         ) : loading ? (
-          <div style={{ padding: '36px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            Loading runtime error logs...
-          </div>
+          <LoadingScreen fullScreen={false} label="Loading Runtime Error Logs..." sublabel="Fetching exception stack traces & client errors" />
         ) : filteredLogs.length === 0 ? (
           <div style={{ padding: '36px', textAlign: 'center', color: 'var(--green)' }}>
             ✓ Zero error logs found for this filter! All systems running smoothly.

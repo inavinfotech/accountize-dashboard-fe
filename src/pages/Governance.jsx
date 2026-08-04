@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase, fetchUserProfiles } from '../lib/supabase'
+import LoadingScreen from '../components/LoadingScreen'
 import {
   ShieldCheck, Share2, RefreshCw, Trash2, Search, Link2, Clock,
   Eye, TrendingUp, BarChart2, PieChart as PieIcon, Copy, Check
@@ -382,9 +383,7 @@ export default function Governance() {
         </div>
 
         {loading ? (
-          <div style={{ padding: '36px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            Loading active shared ledger links...
-          </div>
+          <LoadingScreen fullScreen={false} label="Loading Shared Ledgers..." sublabel="Auditing active tokens & partner links" />
         ) : filteredLinks.length === 0 ? (
           <div style={{ padding: '36px', textAlign: 'center', color: 'var(--text-secondary)' }}>
             No active shared ledger tokens generated yet.

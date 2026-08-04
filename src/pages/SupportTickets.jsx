@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase, fetchUserProfiles } from '../lib/supabase'
+import LoadingScreen from '../components/LoadingScreen'
 import {
   MessageSquare, CheckCircle, RefreshCw, Search, Send, Clock,
   AlertCircle, TrendingUp, BarChart2, Eye, User, ShieldAlert
@@ -421,9 +422,7 @@ export default function SupportTickets() {
         </div>
 
         {loading ? (
-          <div style={{ padding: '36px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            Loading support tickets...
-          </div>
+          <LoadingScreen fullScreen={false} label="Loading Support Tickets..." sublabel="Fetching incoming user inquiries & responses" />
         ) : filteredTickets.length === 0 ? (
           <div style={{ padding: '36px', textAlign: 'center', color: 'var(--green)' }}>
             ✓ No support tickets found for this filter!
