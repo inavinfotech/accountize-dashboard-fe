@@ -181,7 +181,7 @@ function AdminLayout() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span className="badge badge-green desktop-only-badge">Production</span>
             <a
-              href="http://localhost:5173"
+              href="https://app.accountize.in"
               target="_blank"
               rel="noreferrer"
               className="btn btn-secondary btn-sm"
