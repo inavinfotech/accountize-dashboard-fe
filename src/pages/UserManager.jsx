@@ -45,7 +45,9 @@ export default function UserManager() {
   const [userNames, setUserNames] = useState({})
   const [selectedUser, setSelectedUser] = useState(null)
   const [deleteConfirmUser, setDeleteConfirmUser] = useState(null)
+  const [tierConfirmData, setTierConfirmData] = useState(null)
   const [deletingUserId, setDeletingUserId] = useState(null)
+  const [savingTier, setSavingTier] = useState(false)
   const [dateRange, setDateRange] = useState('30d') // '7d' or '30d'
 
   const handleDeleteUser = async (userObj) => {
@@ -207,25 +209,57 @@ export default function UserManager() {
     }
   }
 
-  const handleTierChange = async (userId, newTier) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, tier: newTier } : u))
-    try {
-      let plan = 'free'
-      let status = 'active'
-      let trialEnds = null
-      if (newTier === 'Pro Plan (Paid)') {
-        plan = 'pro'
-        status = 'active'
-      } else if (newTier === 'Pro Trial') {
-        plan = 'free'
-        status = 'trialing'
-        trialEnds = new Date(Date.now() + 30 * 86400000).toISOString()
-      }
+  const executeTierChange = async () => {
+    if (!tierConfirmData) return
+    const { user: userObj, targetTier, tenure, trialDays } = tierConfirmData
+    const userId = userObj.id
+    setSavingTier(true)
 
+    let plan = 'free'
+    let status = 'active'
+    let billingCycle = null
+    let trialEnds = null
+    let periodStart = new Date().toISOString()
+    let periodEnd = null
+
+    if (targetTier === 'Pro Plan (Paid)') {
+      plan = 'pro'
+      status = 'active'
+      billingCycle = tenure === 'annual' ? 'annual' : (tenure === 'lifetime' ? 'annual' : 'monthly')
+      const now = new Date()
+      if (tenure === 'monthly') {
+        now.setMonth(now.getMonth() + 1)
+      } else if (tenure === 'annual') {
+        now.setFullYear(now.getFullYear() + 1)
+      } else if (tenure === 'lifetime') {
+        now.setFullYear(now.getFullYear() + 100)
+      }
+      periodEnd = now.toISOString()
+    } else if (targetTier === 'Pro Trial') {
+      plan = 'free'
+      status = 'trialing'
+      billingCycle = 'monthly'
+      const now = new Date()
+      const days = parseInt(trialDays) || 30
+      now.setDate(now.getDate() + days)
+      trialEnds = now.toISOString()
+      periodEnd = now.toISOString()
+    } else {
+      plan = 'free'
+      status = 'active'
+      billingCycle = null
+      periodEnd = null
+      trialEnds = null
+    }
+
+    try {
       const { error: rpcErr } = await supabase.rpc('admin_update_user_subscription', {
         target_user_id: userId,
         new_plan: plan,
         new_status: status,
+        new_billing_cycle: billingCycle,
+        new_current_period_start: periodStart,
+        new_current_period_end: periodEnd,
         new_trial_ends_at: trialEnds
       })
 
@@ -234,12 +268,20 @@ export default function UserManager() {
           user_id: userId,
           plan,
           status,
+          billing_cycle: billingCycle,
+          current_period_start: periodStart,
+          current_period_end: periodEnd,
           trial_ends_at: trialEnds,
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' })
       }
+
+      setTierConfirmData(null)
+      await loadUsers()
     } catch (err) {
-      console.error('Failed to update user subscription:', err)
+      console.error('Failed to update user plan tier:', err)
+    } finally {
+      setSavingTier(false)
     }
   }
 
@@ -593,7 +635,17 @@ export default function UserManager() {
                       <td>
                         <select
                           value={u.tier}
-                          onChange={e => handleTierChange(u.id, e.target.value)}
+                          onChange={e => {
+                            const newTier = e.target.value
+                            if (newTier !== u.tier) {
+                              setTierConfirmData({
+                                user: u,
+                                targetTier: newTier,
+                                tenure: 'monthly',
+                                trialDays: 30
+                              })
+                            }
+                          }}
                           style={{
                             background: 'var(--bg-primary)',
                             color: 'var(--text-primary)',
@@ -783,6 +835,125 @@ export default function UserManager() {
                   <div className="loading-spinner" style={{ width: 14, height: 14 }} />
                 ) : (
                   <><Trash2 size={14} /> Permanently Delete User</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Subscription Plan Change Re-Verification Modal ───────────────────── */}
+      {tierConfirmData && (
+        <div className="modal-backdrop animate-in" onClick={() => setTierConfirmData(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 460 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: '50%', background: '#e0e7ff',
+                color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <ShieldCheck size={22} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                  Confirm Subscription Plan Change
+                </h3>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                  Re-verify plan tier and duration before updating user record
+                </p>
+              </div>
+            </div>
+
+            <div style={{
+              background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: 8,
+              padding: '14px 16px', fontSize: '0.825rem', marginBottom: 16, lineHeight: 1.5
+            }}>
+              <div><strong>Target User:</strong> {userNames[tierConfirmData.user.id]?.displayName || tierConfirmData.user.displayName || 'Subscriber'}</div>
+              <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                {userNames[tierConfirmData.user.id]?.email || tierConfirmData.user.id}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, padding: '8px 12px', background: 'var(--bg-card-hover)', borderRadius: 6 }}>
+                <span className="badge badge-blue">{tierConfirmData.user.tier}</span>
+                <span>➔</span>
+                <span className="badge badge-purple">{tierConfirmData.targetTier}</span>
+              </div>
+            </div>
+
+            {/* Tenure Options for Pro Plan */}
+            {tierConfirmData.targetTier === 'Pro Plan (Paid)' && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 6 }}>
+                  Select Pro Subscription Duration / Tenure:
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {[
+                    { id: 'monthly', label: '1 Month (Monthly Renewal)', desc: 'Valid for 30 days from today' },
+                    { id: 'annual', label: '1 Year (Annual Renewal)', desc: 'Valid for 365 days from today' },
+                    { id: 'lifetime', label: 'Lifetime Pro (100 Years)', desc: 'Valid indefinitely without expiry' },
+                  ].map(opt => (
+                    <label key={opt.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+                      borderRadius: 6, border: `1px solid ${tierConfirmData.tenure === opt.id ? '#6366f1' : 'var(--border-color)'}`,
+                      background: tierConfirmData.tenure === opt.id ? 'rgba(99, 102, 241, 0.05)' : 'transparent',
+                      cursor: 'pointer'
+                    }}>
+                      <input
+                        type="radio"
+                        name="proTenure"
+                        checked={tierConfirmData.tenure === opt.id}
+                        onChange={() => setTierConfirmData(prev => prev ? { ...prev, tenure: opt.id } : null)}
+                      />
+                      <div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{opt.label}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{opt.desc}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Duration Options for Pro Trial */}
+            {tierConfirmData.targetTier === 'Pro Trial' && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 6 }}>
+                  Select Pro Trial Duration:
+                </label>
+                <select
+                  value={tierConfirmData.trialDays}
+                  onChange={e => setTierConfirmData(prev => prev ? { ...prev, trialDays: e.target.value } : null)}
+                  style={{
+                    width: '100%', padding: '8px 12px', borderRadius: 6,
+                    border: '1px solid var(--border-color)', background: 'var(--bg-primary)',
+                    color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.85rem'
+                  }}
+                >
+                  <option value={7}>7 Days Trial</option>
+                  <option value={14}>14 Days Trial</option>
+                  <option value={30}>30 Days Trial (Default)</option>
+                  <option value={90}>90 Days Extended Trial</option>
+                </select>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setTierConfirmData(null)}
+                disabled={savingTier}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={executeTierChange}
+                disabled={savingTier}
+              >
+                {savingTier ? (
+                  <div className="loading-spinner" style={{ width: 14, height: 14 }} />
+                ) : (
+                  'Confirm & Update Plan'
                 )}
               </button>
             </div>

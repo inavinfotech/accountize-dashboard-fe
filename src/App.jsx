@@ -8,11 +8,12 @@ import AnalyticsStream from './pages/AnalyticsStream'
 import ErrorInspector from './pages/ErrorInspector'
 import SupportTickets from './pages/SupportTickets'
 import UserManager from './pages/UserManager'
+import AccountsFinance from './pages/AccountsFinance'
 import Governance from './pages/Governance'
 import Login from './pages/Login'
 import {
   LayoutDashboard, Activity, AlertTriangle, MessageSquare,
-  Users, ShieldCheck, LogOut, Shield, ExternalLink, RefreshCw
+  Users, ShieldCheck, LogOut, Shield, ExternalLink, RefreshCw, Wallet
 } from 'lucide-react'
 
 class ErrorBoundary extends Component {
@@ -110,9 +111,10 @@ function AdminLayout() {
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: 'Overview', shortLabel: 'Overview' },
     { path: '/analytics', icon: Activity, label: 'Analytics', shortLabel: 'Analytics' },
+    { path: '/accounts', icon: Wallet, label: 'Accounts', shortLabel: 'Accounts' },
+    { path: '/users', icon: Users, label: 'Users', shortLabel: 'Users' },
     { path: '/errors', icon: AlertTriangle, label: 'Errors', shortLabel: 'Errors' },
     { path: '/tickets', icon: MessageSquare, label: 'Tickets', shortLabel: 'Tickets' },
-    { path: '/users', icon: Users, label: 'Users', shortLabel: 'Users' },
     { path: '/governance', icon: ShieldCheck, label: 'Audit', shortLabel: 'Audit' },
   ]
 
@@ -196,6 +198,7 @@ function AdminLayout() {
           <Routes>
             <Route path="/" element={<Overview />} />
             <Route path="/analytics" element={<AnalyticsStream />} />
+            <Route path="/accounts" element={<AccountsFinance />} />
             <Route path="/errors" element={<ErrorInspector />} />
             <Route path="/tickets" element={<SupportTickets />} />
             <Route path="/users" element={<UserManager />} />
