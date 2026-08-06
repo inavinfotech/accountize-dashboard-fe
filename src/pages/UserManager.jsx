@@ -4,7 +4,7 @@ import LoadingScreen from '../components/LoadingScreen'
 import {
   Users, UserCheck, ShieldAlert, ShieldCheck, Mail, Search,
   Filter, Calendar, ExternalLink, AlertTriangle, ArrowUpRight, Lock, Key, RefreshCw, Shield, Award, Ban,
-  TrendingUp, Activity, CheckCircle, Eye, FileText, Share2, Layers
+  TrendingUp, Activity, CheckCircle, Eye, FileText, Share2, Layers, Trash2
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -35,8 +35,7 @@ function SlateTooltip({ active, payload, label }) {
 const TIER_COLORS = {
   'Starter Free': '#3b82f6',
   'Pro Trial': '#8b5cf6',
-  'Pro Plan (Paid)': '#10b981',
-  'Collab Plan': '#f59e0b'
+  'Pro Plan (Paid)': '#10b981'
 }
 
 export default function UserManager() {
@@ -45,7 +44,46 @@ export default function UserManager() {
   const [searchQuery, setSearchQuery] = useState('')
   const [userNames, setUserNames] = useState({})
   const [selectedUser, setSelectedUser] = useState(null)
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState(null)
+  const [deletingUserId, setDeletingUserId] = useState(null)
   const [dateRange, setDateRange] = useState('30d') // '7d' or '30d'
+
+  const handleDeleteUser = async (userObj) => {
+    if (!userObj) return
+    const userId = userObj.id
+    setDeletingUserId(userId)
+    try {
+      // 1. Invoke RPC function admin_delete_user_data
+      const { error: rpcErr } = await supabase.rpc('admin_delete_user_data', { target_user_id: userId })
+
+      // 2. Perform direct table cleanup fallbacks in case RPC is not deployed yet
+      if (rpcErr) {
+        console.warn('RPC admin_delete_user_data error, applying fallback table deletes:', rpcErr)
+        const { data: userAccounts } = await supabase.from('accounts').select('id').eq('user_id', userId)
+        const accountIds = userAccounts?.map(a => a.id) || []
+
+        if (accountIds.length > 0) {
+          await supabase.from('transactions').delete().in('account_id', accountIds)
+          await supabase.from('shared_links').delete().in('account_id', accountIds)
+        }
+        await supabase.from('expenses').delete().eq('user_id', userId)
+        await supabase.from('shared_links').delete().eq('user_id', userId)
+        await supabase.from('accounts').delete().eq('user_id', userId)
+        await supabase.from('subscriptions').delete().eq('user_id', userId)
+        await supabase.from('referrals').delete().or(`referrer_id.eq.${userId},referred_id.eq.${userId}`)
+        await supabase.from('analytics_events').delete().eq('user_id', userId)
+      }
+
+      // 3. Remove user from local state
+      setUsers(prev => prev.filter(u => u.id !== userId))
+      if (selectedUser?.id === userId) setSelectedUser(null)
+      setDeleteConfirmUser(null)
+    } catch (err) {
+      console.error('Failed to delete user:', err)
+    } finally {
+      setDeletingUserId(null)
+    }
+  }
 
   useEffect(() => {
     loadUsers()
@@ -135,6 +173,32 @@ export default function UserManager() {
         })
       }
 
+      // Query subscriptions table via admin RPC (bypasses RLS) with fallback
+      let subsData = null
+      const { data: rpcSubs, error: rpcError } = await supabase.rpc('admin_get_all_subscriptions')
+      if (!rpcError && rpcSubs) {
+        subsData = rpcSubs
+      } else {
+        const { data: tableSubs } = await supabase.from('subscriptions').select('*')
+        subsData = tableSubs
+      }
+
+      if (subsData) {
+        subsData.forEach(sub => {
+          if (userMap.has(sub.user_id)) {
+            const u = userMap.get(sub.user_id)
+            if (sub.status === 'suspended') {
+              u.status = 'suspended'
+            } else {
+              u.status = 'active'
+            }
+            if (sub.status === 'trialing') u.tier = 'Pro Trial'
+            else if (sub.plan === 'pro') u.tier = 'Pro Plan (Paid)'
+            else u.tier = 'Starter Free'
+          }
+        })
+      }
+
       setUsers(Array.from(userMap.values()))
     } catch (err) {
       console.error('Failed to load users:', err)
@@ -143,18 +207,66 @@ export default function UserManager() {
     }
   }
 
-  const handleTierChange = (userId, newTier) => {
+  const handleTierChange = async (userId, newTier) => {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, tier: newTier } : u))
+    try {
+      let plan = 'free'
+      let status = 'active'
+      let trialEnds = null
+      if (newTier === 'Pro Plan (Paid)') {
+        plan = 'pro'
+        status = 'active'
+      } else if (newTier === 'Pro Trial') {
+        plan = 'free'
+        status = 'trialing'
+        trialEnds = new Date(Date.now() + 30 * 86400000).toISOString()
+      }
+
+      const { error: rpcErr } = await supabase.rpc('admin_update_user_subscription', {
+        target_user_id: userId,
+        new_plan: plan,
+        new_status: status,
+        new_trial_ends_at: trialEnds
+      })
+
+      if (rpcErr) {
+        await supabase.from('subscriptions').upsert({
+          user_id: userId,
+          plan,
+          status,
+          trial_ends_at: trialEnds,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' })
+      }
+    } catch (err) {
+      console.error('Failed to update user subscription:', err)
+    }
   }
 
-  const handleToggleStatus = (userId) => {
-    setUsers(prev => prev.map(u => {
-      if (u.id === userId) {
-        const nextStatus = u.status === 'active' ? 'suspended' : 'active'
-        return { ...u, status: nextStatus }
+  const handleToggleStatus = async (userId) => {
+    const userObj = users.find(u => u.id === userId)
+    if (!userObj) return
+
+    const nextStatus = userObj.status === 'active' ? 'suspended' : 'active'
+
+    // Optimistic UI update
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: nextStatus } : u))
+
+    try {
+      let plan = userObj.tier.includes('Pro') ? 'pro' : 'free'
+      const { error: rpcErr } = await supabase.rpc('admin_update_user_subscription', {
+        target_user_id: userId,
+        new_plan: plan,
+        new_status: nextStatus,
+        new_trial_ends_at: null
+      })
+
+      if (rpcErr) {
+        console.error('Failed to update user subscription status via RPC:', rpcErr)
       }
-      return u
-    }))
+    } catch (err) {
+      console.error('Failed to update user suspension status:', err)
+    }
   }
 
   // ── Analytics & Visualizations Computation ──────────────────────────
@@ -162,7 +274,7 @@ export default function UserManager() {
     const totalUsers = users.length
     const activeUsers = users.filter(u => u.status === 'active').length
     const suspendedUsers = totalUsers - activeUsers
-    const proUsers = users.filter(u => u.tier.includes('Pro') || u.tier.includes('Collab')).length
+    const proUsers = users.filter(u => u.tier.includes('Pro')).length
 
     // Active Today (users whose lastSeen is today)
     const todayStr = new Date().toISOString().split('T')[0]
@@ -447,7 +559,7 @@ export default function UserManager() {
                   <th>Ledgers</th>
                   <th>Events</th>
                   <th>Last Active</th>
-                  <th>Actions</th>
+                  <th style={{ textAlign: 'right', minWidth: 220 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -496,7 +608,6 @@ export default function UserManager() {
                           <option value="Starter Free">Starter Free</option>
                           <option value="Pro Trial">Pro Plan (Trial)</option>
                           <option value="Pro Plan (Paid)">Pro Plan (Paid)</option>
-                          <option value="Collab Plan">Collab Plan</option>
                         </select>
                       </td>
                       <td>
@@ -515,8 +626,8 @@ export default function UserManager() {
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                         {new Date(u.lastSeen).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <td style={{ minWidth: 220, whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
                           <button className="btn btn-secondary btn-sm" onClick={() => setSelectedUser(u)}>
                             <Eye size={12} /> Inspect
                           </button>
@@ -525,6 +636,14 @@ export default function UserManager() {
                             onClick={() => handleToggleStatus(u.id)}
                           >
                             {u.status === 'active' ? <><Ban size={12} /> Suspend</> : 'Unsuspend'}
+                          </button>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            style={{ color: 'var(--red)', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                            onClick={() => setDeleteConfirmUser(u)}
+                            title="Delete User & Data"
+                          >
+                            <Trash2 size={12} /> Delete
                           </button>
                         </div>
                       </td>
@@ -584,7 +703,14 @@ export default function UserManager() {
               <div><strong>Last Activity:</strong> {new Date(selectedUser.lastSeen).toLocaleString('en-IN', { dateStyle: 'full', timeStyle: 'short' })}</div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 20 }}>
+              <button
+                className="btn btn-secondary"
+                style={{ color: 'var(--red)', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                onClick={() => setDeleteConfirmUser(selectedUser)}
+              >
+                <Trash2 size={14} /> Delete Account &amp; All Data
+              </button>
               <button
                 className={`btn ${selectedUser.status === 'active' ? 'btn-danger' : 'btn-primary'}`}
                 onClick={() => {
@@ -593,6 +719,71 @@ export default function UserManager() {
                 }}
               >
                 {selectedUser.status === 'active' ? 'Suspend Account' : 'Unsuspend Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── User Delete Confirmation Modal ────────────────────────────────────── */}
+      {deleteConfirmUser && (
+        <div className="modal-backdrop animate-in" onClick={() => setDeleteConfirmUser(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: '50%', background: '#fee2e2',
+                color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <AlertTriangle size={22} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                  Permanently Delete User Account?
+                </h3>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                  This action is irreversible and purges all user data.
+                </p>
+              </div>
+            </div>
+
+            <div style={{
+              background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8,
+              padding: '12px 16px', fontSize: '0.825rem', color: '#991b1b', marginBottom: 16,
+              lineHeight: 1.5
+            }}>
+              <div><strong>Target Account:</strong> {userNames[deleteConfirmUser.id]?.displayName || deleteConfirmUser.displayName || 'User'}</div>
+              <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', marginTop: 2 }}>{userNames[deleteConfirmUser.id]?.email || deleteConfirmUser.id}</div>
+              <hr style={{ border: 'none', borderTop: '1px solid #fca5a5', margin: '10px 0' }} />
+              <div>The following data will be permanently wiped:</div>
+              <ul style={{ margin: '6px 0 0 18px', padding: 0, fontSize: '0.78rem' }}>
+                <li>All bank &amp; cash accounts ({deleteConfirmUser.accountsCount} created)</li>
+                <li>All logged transactions &amp; expenses</li>
+                <li>All shared cryptographic ledger links</li>
+                <li>Subscription tier &amp; referral history</li>
+                <li>Authentication credentials &amp; login metadata</li>
+              </ul>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setDeleteConfirmUser(null)}
+                disabled={deletingUserId === deleteConfirmUser.id}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger"
+                style={{ background: '#dc2626', color: '#fff' }}
+                onClick={() => handleDeleteUser(deleteConfirmUser)}
+                disabled={deletingUserId === deleteConfirmUser.id}
+              >
+                {deletingUserId === deleteConfirmUser.id ? (
+                  <div className="loading-spinner" style={{ width: 14, height: 14 }} />
+                ) : (
+                  <><Trash2 size={14} /> Permanently Delete User</>
+                )}
               </button>
             </div>
           </div>

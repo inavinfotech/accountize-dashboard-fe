@@ -218,18 +218,49 @@ a {
 
 .admin-header {
   min-height: 56px;
-  height: auto;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
+  padding: 12px 24px;
   box-shadow: var(--shadow-sm);
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap;
+  gap: 16px;
   width: 100%;
   max-width: 100%;
+}
+
+.admin-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.admin-header-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.admin-header-subtitle .domain {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.admin-header-subtitle .dot {
+  opacity: 0.4;
+}
+
+.admin-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .admin-content {
@@ -352,7 +383,7 @@ a {
 
 .admin-table {
   width: 100%;
-  min-width: 600px;
+  min-width: 780px;
   border-collapse: collapse;
   text-align: left;
   font-size: 0.85rem;
@@ -779,6 +810,10 @@ a {
   }
 
   .desktop-only-badge {
+    display: none !important;
+  }
+
+  .admin-header-subtitle {
     display: none !important;
   }
 

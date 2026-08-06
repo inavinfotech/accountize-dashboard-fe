@@ -166,26 +166,23 @@ function AdminLayout() {
       <main className="admin-main">
         {/* App Top Bar */}
         <header className="admin-header">
-          <div className="sidebar-logo">
-            <img src="/logo.svg" alt="Accountize Logo" className="sidebar-logo-icon" style={{ width: 30, height: 30 }} />
-            <div className="sidebar-logo-text">
-              <h1 style={{ fontSize: '0.95rem' }}>Accountize Admin</h1>
+          <div className="admin-header-left">
+            <div className="sidebar-logo">
+              <img src="/logo.svg" alt="Accountize Logo" className="sidebar-logo-icon" style={{ width: 28, height: 28 }} />
+              <div className="sidebar-logo-text">
+                <h1 style={{ fontSize: '0.9rem', fontWeight: 800 }}>Accountize Admin</h1>
+              </div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            <span>Accountize Command Center</span>
-            <span>•</span>
-            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>admin.accountize.app</span>
-          </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="admin-header-actions">
             <span className="badge badge-green desktop-only-badge">Production</span>
             <a
               href="https://app.accountize.in"
               target="_blank"
               rel="noreferrer"
               className="btn btn-secondary btn-sm"
-              style={{ borderRadius: 'var(--radius-full)' }}
+              style={{ borderRadius: 'var(--radius-full)', fontSize: '0.75rem', padding: '6px 12px' }}
             >
               Client App <ExternalLink size={12} />
             </a>

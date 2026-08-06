@@ -38,8 +38,9 @@ const FUNNEL_STEPS = [
   { key: 'signup_completed', label: 'Sign Up', icon: UserCheck, color: '#6366f1' },
   { key: 'onboarding_completed', label: 'Onboarding', icon: ShieldCheck, color: '#8b5cf6' },
   { key: 'account_created', label: 'Account Created', icon: FileText, color: '#3b82f6' },
-  { key: 'math_split_used', label: 'First Transaction', icon: Zap, color: '#10b981' },
-  { key: 'shared_ledger_created', label: 'Shared Ledger', icon: Share2, color: '#f59e0b' },
+  { key: 'upgrade_clicked', label: 'Upgrade Intent', icon: Zap, color: '#a855f7' },
+  { key: 'payment_completed', label: 'Pro Conversion', icon: TrendingUp, color: '#10b981' },
+  { key: 'referral_completed', label: 'Referral Join', icon: Share2, color: '#f59e0b' },
 ]
 
 const EVENT_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#3b82f6', '#ec4899', '#14b8a6']

@@ -81,7 +81,29 @@ export default function Overview() {
       const uniqueUsers = new Set((accountsUsers || []).map(a => a.user_id).filter(Boolean))
       const totalUsers = Math.max(profileCount, uniqueUsers.size, 1)
 
-      const calculatedMRR = totalUsers * 499
+      // Fetch active paid subscriptions for real MRR calculation via admin RPC
+      let activeSubs = []
+      const { data: rpcSubs, error: rpcError } = await supabase.rpc('admin_get_all_subscriptions')
+      if (!rpcError && rpcSubs) {
+        activeSubs = rpcSubs.filter(s => s.plan === 'pro' && s.status === 'active')
+      } else {
+        const { data: tableSubs } = await supabase
+          .from('subscriptions')
+          .select('billing_cycle')
+          .eq('plan', 'pro')
+          .eq('status', 'active')
+        activeSubs = tableSubs || []
+      }
+
+      const calculatedMRR = activeSubs.reduce((sum, sub) => {
+        return sum + (sub.billing_cycle === 'annual' ? 100 : 149)
+      }, 0)
+
+      // Fetch completed referrals count
+      const { count: referralCount } = await supabase
+        .from('referrals')
+        .select('*', { count: 'exact', head: true })
+        .or('status.eq.completed,status.eq.rewarded')
 
       setMetrics({
         totalUsers: totalUsers,
@@ -90,7 +112,8 @@ export default function Overview() {
         totalErrors: errCount || 0,
         openTickets: ticketCount || 0,
         mrr: calculatedMRR,
-        totalVolume: totalVolume
+        totalVolume: totalVolume,
+        totalReferrals: referralCount || 0
       })
 
       // Fetch recent combined activity stream (last 8 events/errors/txs)
