@@ -5,7 +5,7 @@ import {
   Settings, ToggleLeft, ToggleRight, RefreshCw, Save,
   LogIn, UserPlus, LayoutDashboard, AlertTriangle,
   CheckCircle, XCircle, Clock, Shield, Code, Eye,
-  Wand2, FileCode, Copy, Check
+  Wand2, FileCode, Copy, Check, CreditCard, Tag
 } from 'lucide-react'
 
 // Service definitions with metadata
@@ -160,7 +160,11 @@ export default function SystemConfig() {
       const msgMap = {}
       ;(data || []).forEach(row => {
         configMap[row.key] = row
-        msgMap[row.key] = row.message || ''
+        if (row.key === 'pro_monthly_price' || row.key === 'pro_annual_price') {
+          msgMap[row.key] = row.value || ''
+        } else {
+          msgMap[row.key] = row.message || ''
+        }
       })
       setConfig(configMap)
       setMessages(msgMap)
@@ -485,6 +489,83 @@ export default function SystemConfig() {
               style={{ borderRadius: 'var(--radius-full)', fontSize: '0.75rem', padding: '6px 16px', background: 'var(--purple)', borderColor: 'var(--purple)' }}
             >
               <Save size={13} /> Save Whitelist
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Subscription Plan Pricing Card */}
+      <div className="sysconfig-card" style={{ marginTop: 20, borderTop: '3px solid var(--green)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div className="sysconfig-icon" style={{ background: 'var(--green-bg)', border: '1.5px solid var(--green-border)' }}>
+              <CreditCard size={20} color="var(--green)" />
+            </div>
+            <div>
+              <h3 className="sysconfig-card-title">Accountize Pro Plan Pricing</h3>
+              <p className="sysconfig-card-desc">Dynamically manage subscription pricing for Monthly and Annual Accountize Pro tiers.</p>
+            </div>
+          </div>
+          <span className="badge badge-green" style={{ fontSize: '0.68rem' }}>
+            Live Billing Config
+          </span>
+        </div>
+
+        <div className="sysconfig-message-section" style={{ borderTop: 'none', paddingTop: 0, marginTop: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 14 }}>
+            <div>
+              <label className="sysconfig-message-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Tag size={12} color="var(--accent-primary)" /> Monthly Price (₹ INR)
+              </label>
+              <input
+                type="number"
+                min="1"
+                className="sysconfig-textarea"
+                style={{ height: 42, padding: '8px 12px', fontSize: '0.9rem', fontWeight: 700 }}
+                placeholder="149"
+                value={messages['pro_monthly_price'] ?? (config['pro_monthly_price']?.value || '149')}
+                onChange={e => setMessages(prev => ({ ...prev, pro_monthly_price: e.target.value }))}
+              />
+              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                Amount charged per month for Accountize Pro
+              </span>
+            </div>
+
+            <div>
+              <label className="sysconfig-message-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Tag size={12} color="var(--green)" /> Annual Price (₹ INR)
+              </label>
+              <input
+                type="number"
+                min="1"
+                className="sysconfig-textarea"
+                style={{ height: 42, padding: '8px 12px', fontSize: '0.9rem', fontWeight: 700 }}
+                placeholder="1199"
+                value={messages['pro_annual_price'] ?? (config['pro_annual_price']?.value || '1199')}
+                onChange={e => setMessages(prev => ({ ...prev, pro_annual_price: e.target.value }))}
+              />
+              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                Amount charged annually (~₹{Math.round((Number(messages['pro_annual_price'] ?? (config['pro_annual_price']?.value || '1199')) || 1199) / 12)}/mo equivalent)
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+              ⚡ Updating pricing instantly changes Razorpay checkout amounts & app subscription tags across all clients.
+            </span>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={async () => {
+                const monthlyVal = messages['pro_monthly_price'] ?? (config['pro_monthly_price']?.value || '149')
+                const annualVal = messages['pro_annual_price'] ?? (config['pro_annual_price']?.value || '1199')
+                await saveConfig('pro_monthly_price', monthlyVal, 'Monthly subscription price in INR')
+                await saveConfig('pro_annual_price', annualVal, 'Annual subscription price in INR')
+              }}
+              disabled={saving === 'pro_monthly_price' || saving === 'pro_annual_price'}
+              style={{ borderRadius: 'var(--radius-full)', fontSize: '0.75rem', padding: '6px 18px', background: 'var(--green)', borderColor: 'var(--green)' }}
+            >
+              <Save size={13} /> Save Plan Rates
             </button>
           </div>
         </div>

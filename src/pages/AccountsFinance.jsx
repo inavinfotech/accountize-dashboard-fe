@@ -58,6 +58,17 @@ export default function AccountsFinance() {
         subData = rawSubs || []
       }
 
+      // 3. Fetch system config rates
+      const { data: cfgData } = await supabase.from('system_config').select('key, value')
+      const cfgMap = (cfgData || []).reduce((acc, row) => {
+        acc[row.key] = row.value
+        return acc
+      }, {})
+      setSysConfigRates({
+        monthly: Number(cfgMap['pro_monthly_price']) || 149,
+        annual: Number(cfgMap['pro_annual_price']) || 1199
+      })
+
       setReceipts(receiptData)
       setSubscriptions(subData)
     } catch (err) {
@@ -67,6 +78,8 @@ export default function AccountsFinance() {
       setRefreshing(false)
     }
   }
+
+  const [sysConfigRates, setSysConfigRates] = useState({ monthly: 149, annual: 1199 })
 
   useEffect(() => {
     loadFinancialData()
@@ -85,13 +98,13 @@ export default function AccountsFinance() {
     const activeTrialSubs = subscriptions.filter(s => s.status === 'trialing')
     const freeSubs = subscriptions.filter(s => s.plan === 'free' && s.status === 'active')
 
-    // Calculate MRR
+    // Calculate MRR using dynamic rates
     let mrr = 0
     activeProSubs.forEach(s => {
       if (s.billing_cycle === 'annual') {
-        mrr += 1499 / 12 // ~124.91/mo
+        mrr += sysConfigRates.annual / 12
       } else {
-        mrr += 149 // ₹149/mo
+        mrr += sysConfigRates.monthly
       }
     })
 

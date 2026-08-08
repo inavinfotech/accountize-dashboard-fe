@@ -81,6 +81,15 @@ export default function Overview() {
       const uniqueUsers = new Set((accountsUsers || []).map(a => a.user_id).filter(Boolean))
       const totalUsers = Math.max(profileCount, uniqueUsers.size, 1)
 
+      // Fetch dynamic system config pricing rates
+      const { data: configData } = await supabase.from('system_config').select('key, value')
+      const configMap = (configData || []).reduce((acc, row) => {
+        acc[row.key] = row.value
+        return acc
+      }, {})
+      const monthlyRate = Number(configMap['pro_monthly_price']) || 149
+      const annualRate = Number(configMap['pro_annual_price']) || 1199
+
       // Fetch active paid subscriptions for real MRR calculation via admin RPC
       let activeSubs = []
       const { data: rpcSubs, error: rpcError } = await supabase.rpc('admin_get_all_subscriptions')
@@ -96,7 +105,7 @@ export default function Overview() {
       }
 
       const calculatedMRR = activeSubs.reduce((sum, sub) => {
-        return sum + (sub.billing_cycle === 'annual' ? 100 : 149)
+        return sum + (sub.billing_cycle === 'annual' ? (annualRate / 12) : monthlyRate)
       }, 0)
 
       // Fetch completed referrals count
@@ -271,7 +280,7 @@ export default function Overview() {
           </div>
           <div className="metric-value">₹{metrics.mrr.toLocaleString('en-IN')}</div>
           <div className="metric-subtext" style={{ color: 'var(--green)', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <TrendingUp size={12} /> ₹499/mo per user estimate
+            <TrendingUp size={12} /> ₹149/mo Pro tier rate
           </div>
         </div>
 
