@@ -272,7 +272,18 @@ function AdminLayout() {
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={() => setMoreDrawerOpen(false)}
-                style={{ borderRadius: '50%', width: 28, height: 28, padding: 0 }}
+                style={{
+                  borderRadius: '50%',
+                  width: 28,
+                  height: 28,
+                  minWidth: 28,
+                  minHeight: 28,
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
               >
                 <X size={14} />
               </button>
