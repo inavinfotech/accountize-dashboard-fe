@@ -404,6 +404,32 @@ export default function AnalyticsStream() {
               </button>
             ))}
           </div>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => {
+              if (!events.length) return
+              const headers = ['id', 'created_at', 'event_name', 'user_id', 'metadata']
+              const rows = events.map(e => [
+                e.id,
+                e.created_at,
+                e.event_name,
+                e.user_id || 'anonymous',
+                JSON.stringify(e.metadata || {}).replace(/"/g, '""')
+              ])
+              const csv = [headers.join(','), ...rows.map(r => r.map(cell => `"${cell}"`).join(','))].join('\n')
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `Accountize_Analytics_Export_${new Date().toISOString().split('T')[0]}.csv`
+              a.click()
+              URL.revokeObjectURL(url)
+            }}
+            disabled={!events.length}
+            title="Export telemetry events to CSV"
+          >
+            <FileText size={14} /> Export CSV
+          </button>
           <button className="btn btn-secondary" onClick={loadEvents} disabled={loading}>
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
           </button>
@@ -859,22 +885,39 @@ export default function AnalyticsStream() {
               </div>
             </div>
 
-            {/* JSON Code Box */}
-            <pre style={{
-              background: 'var(--bg-primary)',
-              border: '1px solid var(--border-color)',
-              padding: 14,
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.75rem',
-              color: 'var(--text-primary)',
-              overflowX: 'auto',
-              maxHeight: 220,
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-              lineHeight: 1.5
-            }}>
-              {JSON.stringify(selectedMetadata, null, 2)}
-            </pre>
+            {/* User Journey Event Timeline */}
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>
+                Recent Activity Journey
+              </div>
+              <div style={{
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                padding: '12px 14px',
+                maxHeight: 240,
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8
+              }}>
+                {events.filter(e => e.user_id === selectedMetadata.userId).slice(0, 12).map((evt, idx) => (
+                  <div key={evt.id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px dashed var(--border-color)', paddingBottom: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className={`badge ${evt.event_name === 'page_viewed' ? 'badge-blue' : evt.event_name.includes('error') ? 'badge-red' : 'badge-indigo'}`} style={{ fontSize: '0.65rem' }}>
+                        {evt.event_name.replace(/_/g, ' ')}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        {evt.metadata?.title || evt.metadata?.path || evt.metadata?.action || JSON.stringify(evt.metadata || {})}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                      {new Date(evt.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

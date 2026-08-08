@@ -10,10 +10,11 @@ import SupportTickets from './pages/SupportTickets'
 import UserManager from './pages/UserManager'
 import AccountsFinance from './pages/AccountsFinance'
 import Governance from './pages/Governance'
+import SystemConfig from './pages/SystemConfig'
 import Login from './pages/Login'
 import {
   LayoutDashboard, Activity, AlertTriangle, MessageSquare,
-  Users, ShieldCheck, LogOut, Shield, ExternalLink, RefreshCw, Wallet
+  Users, ShieldCheck, LogOut, Shield, ExternalLink, RefreshCw, Wallet, Sliders
 } from 'lucide-react'
 
 class ErrorBoundary extends Component {
@@ -116,6 +117,7 @@ function AdminLayout() {
     { path: '/errors', icon: AlertTriangle, label: 'Errors', shortLabel: 'Errors' },
     { path: '/tickets', icon: MessageSquare, label: 'Tickets', shortLabel: 'Tickets' },
     { path: '/governance', icon: ShieldCheck, label: 'Audit', shortLabel: 'Audit' },
+    { path: '/system-config', icon: Sliders, label: 'System Config', shortLabel: 'Config' },
   ]
 
   return (
@@ -203,6 +205,7 @@ function AdminLayout() {
             <Route path="/tickets" element={<SupportTickets />} />
             <Route path="/users" element={<UserManager />} />
             <Route path="/governance" element={<Governance />} />
+            <Route path="/system-config" element={<SystemConfig />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
