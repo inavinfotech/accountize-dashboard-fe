@@ -442,14 +442,62 @@ export default function SystemConfig() {
         })}
       </div>
 
+      {/* Maintenance Bypass Whitelist Card */}
+      <div className="sysconfig-card" style={{ marginTop: 20, borderTop: '3px solid var(--purple)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div className="sysconfig-icon" style={{ background: 'var(--purple-bg)', border: '1.5px solid var(--purple-border)' }}>
+              <Shield size={20} color="var(--purple)" />
+            </div>
+            <div>
+              <h3 className="sysconfig-card-title">Maintenance Bypass Whitelist</h3>
+              <p className="sysconfig-card-desc">Exempt specific user emails or User IDs (UUIDs) from service maintenance blocks.</p>
+            </div>
+          </div>
+          <span className="badge" style={{ background: 'var(--purple-bg)', color: 'var(--purple)', border: '1px solid var(--purple-border)', fontSize: '0.68rem' }}>
+            Admin Whitelist
+          </span>
+        </div>
+
+        <div className="sysconfig-message-section" style={{ borderTop: 'none', paddingTop: 0, marginTop: 8 }}>
+          <label className="sysconfig-message-label">
+            Exempt Emails / User IDs (comma-separated)
+          </label>
+          <textarea
+            className="sysconfig-textarea"
+            style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+            placeholder="e.g. vip@accountize.in, tester@gmail.com, 7a3c8e1d-4b92-4f81-9b10..."
+            value={messages['bypass_users'] ?? (config['bypass_users']?.value || config['bypass_users']?.message || '')}
+            onChange={e => setMessages(prev => ({ ...prev, bypass_users: e.target.value }))}
+            rows={3}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+              💡 Super Admin domains (<code>@inexarum.com</code>, <code>@inexarum.in</code>) are automatically bypassed.
+            </span>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => {
+                const val = messages['bypass_users'] ?? (config['bypass_users']?.value || config['bypass_users']?.message || '')
+                saveConfig('bypass_users', val, val)
+              }}
+              disabled={saving === 'bypass_users'}
+              style={{ borderRadius: 'var(--radius-full)', fontSize: '0.75rem', padding: '6px 16px', background: 'var(--purple)', borderColor: 'var(--purple)' }}
+            >
+              <Save size={13} /> Save Whitelist
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Info Note */}
       <div style={{
-        marginTop: 24, padding: '14px 18px', background: 'var(--blue-bg)', border: '1px solid var(--blue-border)',
+        marginTop: 20, padding: '14px 18px', background: 'var(--blue-bg)', border: '1px solid var(--blue-border)',
         borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: '0.78rem', color: 'var(--text-secondary)'
       }}>
         <FileCode size={18} color="var(--blue)" style={{ flexShrink: 0, marginTop: 1 }} />
         <div>
-          <strong>Rich HTML Support:</strong> You can enter inline styles, headings (<code>&lt;h3&gt;</code>), links (<code>&lt;a&gt;</code>), buttons, and banners into the block code editor. The client application will render the HTML directly on the block screen.
+          <strong>Rich HTML & Whitelist Support:</strong> You can enter inline styles, headings (<code>&lt;h3&gt;</code>), links (<code>&lt;a&gt;</code>), and buttons into the block code editor. Whitelisted users will bypass maintenance screens automatically.
         </div>
       </div>
 
