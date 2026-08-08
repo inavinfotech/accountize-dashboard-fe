@@ -1,4 +1,4 @@
-import { Component, useEffect, useLayoutEffect } from 'react'
+import { Component, useState, useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext'
 import NetworkStatusBanner from './components/NetworkStatusBanner'
@@ -14,7 +14,8 @@ import SystemConfig from './pages/SystemConfig'
 import Login from './pages/Login'
 import {
   LayoutDashboard, Activity, AlertTriangle, MessageSquare,
-  Users, ShieldCheck, LogOut, Shield, ExternalLink, RefreshCw, Wallet, Sliders
+  Users, ShieldCheck, LogOut, Shield, ExternalLink, RefreshCw, Wallet, Sliders,
+  MoreHorizontal, X
 } from 'lucide-react'
 
 class ErrorBoundary extends Component {
@@ -85,6 +86,7 @@ function AdminProtectedRoute({ children }) {
 function AdminLayout() {
   const { user, signOutAdmin } = useAdminAuth()
   const location = useLocation()
+  const [moreDrawerOpen, setMoreDrawerOpen] = useState(false)
 
   // Synchronously reset scroll position to top across all scroll containers on route change
   useLayoutEffect(() => {
@@ -119,6 +121,24 @@ function AdminLayout() {
     { path: '/governance', icon: ShieldCheck, label: 'Audit', shortLabel: 'Audit' },
     { path: '/system-config', icon: Sliders, label: 'System Config', shortLabel: 'Config' },
   ]
+
+  // Primary 4 tabs for mobile bottom bar
+  const primaryMobileItems = [
+    { path: '/', icon: LayoutDashboard, label: 'Overview' },
+    { path: '/users', icon: Users, label: 'Users' },
+    { path: '/accounts', icon: Wallet, label: 'Accounts' },
+    { path: '/analytics', icon: Activity, label: 'Analytics' },
+  ]
+
+  // Secondary items in the "More" slide-up drawer
+  const secondaryMobileItems = [
+    { path: '/errors', icon: AlertTriangle, label: 'Error Inspector', desc: 'Runtime & API errors' },
+    { path: '/tickets', icon: MessageSquare, label: 'Support Tickets', desc: 'User inquiries & feedback' },
+    { path: '/governance', icon: ShieldCheck, label: 'Governance Audit', desc: 'Shared link analytics' },
+    { path: '/system-config', icon: Sliders, label: 'System Config', desc: 'Service kill switches & HTML' },
+  ]
+
+  const isSecondaryActive = secondaryMobileItems.some(item => location.pathname === item.path)
 
   return (
     <div className="admin-layout">
@@ -211,9 +231,9 @@ function AdminLayout() {
         </div>
       </main>
 
-      {/* Native Mobile Bottom Navigation Bar */}
+      {/* Native Mobile Bottom Navigation Bar (Top 4 Primary + More) */}
       <nav className="mobile-bottom-nav">
-        {navItems.map(item => {
+        {primaryMobileItems.map(item => {
           const Icon = item.icon
           const isActive = location.pathname === item.path
           return (
@@ -221,13 +241,69 @@ function AdminLayout() {
               key={item.path}
               to={item.path}
               className={`mobile-nav-item ${isActive ? 'active' : ''}`}
+              onClick={() => setMoreDrawerOpen(false)}
             >
               <Icon size={20} />
-              <span>{item.shortLabel}</span>
+              <span>{item.label}</span>
             </NavLink>
           )
         })}
+
+        {/* More Drawer Trigger Tab */}
+        <button
+          type="button"
+          className={`mobile-nav-item ${moreDrawerOpen || isSecondaryActive ? 'active' : ''}`}
+          onClick={() => setMoreDrawerOpen(prev => !prev)}
+        >
+          <MoreHorizontal size={20} />
+          <span>More</span>
+        </button>
       </nav>
+
+      {/* Mobile "More" Slide-up Drawer */}
+      {moreDrawerOpen && (
+        <div className="mobile-more-overlay" onClick={() => setMoreDrawerOpen(false)}>
+          <div className="mobile-more-drawer" onClick={e => e.stopPropagation()}>
+            <div className="mobile-more-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-primary)' }} />
+                <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Admin Management Hub</span>
+              </div>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => setMoreDrawerOpen(false)}
+                style={{ borderRadius: '50%', width: 28, height: 28, padding: 0 }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="mobile-more-grid">
+              {secondaryMobileItems.map(item => {
+                const Icon = item.icon
+                const isActive = location.pathname === item.path
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={`mobile-more-card ${isActive ? 'active' : ''}`}
+                    onClick={() => setMoreDrawerOpen(false)}
+                  >
+                    <div className="mobile-more-icon-box">
+                      <Icon size={20} />
+                    </div>
+                    <div>
+                      <div className="mobile-more-title">{item.label}</div>
+                      <div className="mobile-more-desc">{item.desc}</div>
+                    </div>
+                  </NavLink>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       <NetworkStatusBanner />
     </div>
   )
