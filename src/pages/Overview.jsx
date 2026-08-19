@@ -197,8 +197,8 @@ export default function Overview() {
       }
 
       // Fetch analytics events & transactions for range
-      const { data: rangeEvents } = await supabase.from('analytics_events').select('created_at').order('created_at', { ascending: false }).limit(500)
-      const { data: rangeTxs } = await supabase.from('transactions').select('created_at').order('created_at', { ascending: false }).limit(500)
+      const { data: rangeEvents } = await supabase.from('analytics_events').select('created_at').order('created_at', { ascending: false }).limit(5000)
+      const { data: rangeTxs } = await supabase.from('transactions').select('created_at').order('created_at', { ascending: false }).limit(5000)
 
       if (dateRange === '24h') {
         const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)

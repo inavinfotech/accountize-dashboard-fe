@@ -76,7 +76,7 @@ export default function AnalyticsStream() {
         .from('analytics_events')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(1000)
+        .limit(5000)
 
       setSyncDirection('both') // ↑↓ syncing data
       if (!error && data) setEvents(data)
@@ -93,18 +93,14 @@ export default function AnalyticsStream() {
         .from('analytics_events')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(1000)
+        .limit(5000)
 
       if (error) throw error
       setEvents(data || [])
 
       // Fetch user profile display names
       const profiles = await fetchUserProfiles()
-      const map = {}
-      Object.entries(profiles).forEach(([uid, p]) => {
-        map[uid] = p.displayName
-      })
-      setUserNames(map)
+      setUserNames(profiles || {})
     } catch (err) {
       console.error('Failed to load analytics events:', err)
     } finally {
@@ -147,7 +143,7 @@ export default function AnalyticsStream() {
     let rangeMs = 24 * 60 * 60 * 1000
     if (dateRange === '7d') rangeMs = 7 * 24 * 60 * 60 * 1000
     if (dateRange === '30d') rangeMs = 30 * 24 * 60 * 60 * 1000
-    const rangeStart = new Date(now.getTime() - rangeMs)
+    const rangeStart = dateRange === 'all' ? new Date(0) : new Date(now.getTime() - rangeMs)
 
     const rangedEvents = events.filter(e => new Date(e.created_at) >= rangeStart)
 
@@ -323,9 +319,10 @@ export default function AnalyticsStream() {
       .sort((a, b) => b.events - a.events)
       .slice(0, 10)
       .map(u => {
-        const email = userEmailMap[u.userId] || null
-        const accName = userNames[u.userId] || null
-        const displayName = email || (accName ? `${accName}` : `User #${u.userId.slice(0, 8)}`)
+        const profile = userNames[u.userId]
+        const email = userEmailMap[u.userId] || (typeof profile === 'object' ? profile?.email : null) || null
+        const accName = typeof profile === 'object' ? profile?.displayName : (profile || null)
+        const displayName = accName || email || `User #${u.userId.slice(0, 8)}`
         return { ...u, email, displayName }
       })
 
@@ -394,13 +391,13 @@ export default function AnalyticsStream() {
               )}
             </button>
             <div style={{ width: 1, height: 18, background: 'var(--border-color)', margin: '0 2px' }} />
-            {['24h', '7d', '30d'].map(r => (
+            {['24h', '7d', '30d', 'all'].map(r => (
               <button
                 key={r}
                 className={`range-btn ${dateRange === r && !isLive ? 'active' : ''}`}
                 onClick={() => { setDateRange(r); setIsLive(false) }}
               >
-                {r === '24h' ? 'Last 24h' : r === '7d' ? 'Last 7 Days' : 'Last 30 Days'}
+                {r === '24h' ? 'Last 24h' : r === '7d' ? 'Last 7 Days' : r === '30d' ? 'Last 30 Days' : 'All Time'}
               </button>
             ))}
           </div>

@@ -120,7 +120,11 @@ export default function UserManager() {
 
       // Query distinct user_ids from accounts & analytics_events table to enrich stats
       const { data: accountsData } = await supabase.from('accounts').select('user_id, created_at, name')
-      const { data: eventsData } = await supabase.from('analytics_events').select('user_id, created_at, event_name')
+      const { data: eventsData } = await supabase
+        .from('analytics_events')
+        .select('user_id, created_at, event_name')
+        .order('created_at', { ascending: false })
+        .limit(5000)
 
       // Aggregate user accounts
       if (accountsData) {
@@ -136,6 +140,7 @@ export default function UserManager() {
               status: 'active',
               accountsCount: 1,
               eventsCount: 0,
+              eventsList: [],
               lastSeen: item.created_at
             })
           } else {
@@ -163,10 +168,13 @@ export default function UserManager() {
               status: 'active',
               accountsCount: 0,
               eventsCount: 1,
+              eventsList: [item.created_at],
               lastSeen: item.created_at
             })
           } else {
             const u = userMap.get(item.user_id)
+            if (!u.eventsList) u.eventsList = []
+            u.eventsList.push(item.created_at)
             u.eventsCount += 1
             if (new Date(item.created_at) > new Date(u.lastSeen)) {
               u.lastSeen = item.created_at
@@ -313,18 +321,39 @@ export default function UserManager() {
 
   // ── Analytics & Visualizations Computation ──────────────────────────
   const insights = useMemo(() => {
-    const totalUsers = users.length
-    const activeUsers = users.filter(u => u.status === 'active').length
+    const now = new Date()
+    let rangeMs = null
+    if (dateRange === '24h') rangeMs = 24 * 60 * 60 * 1000
+    else if (dateRange === '7d') rangeMs = 7 * 24 * 60 * 60 * 1000
+    else if (dateRange === '30d') rangeMs = 30 * 24 * 60 * 60 * 1000
+
+    const rangeStart = (dateRange === 'all' || rangeMs === null) ? null : new Date(now.getTime() - rangeMs)
+
+    const usersWithStats = users.map(u => {
+      let eventsCount = 0
+      if (u.eventsList && u.eventsList.length > 0) {
+        if (rangeStart) {
+          eventsCount = u.eventsList.filter(ts => new Date(ts) >= rangeStart).length
+        } else {
+          eventsCount = u.eventsList.length
+        }
+      } else {
+        eventsCount = u.eventsCount || 0
+      }
+      return { ...u, eventsCount }
+    })
+
+    const totalUsers = usersWithStats.length
+    const activeUsers = usersWithStats.filter(u => u.status === 'active').length
     const suspendedUsers = totalUsers - activeUsers
-    const proUsers = users.filter(u => u.tier.includes('Pro')).length
+    const proUsers = usersWithStats.filter(u => u.tier.includes('Pro')).length
 
     // Active Today (users whose lastSeen is today)
-    const todayStr = new Date().toISOString().split('T')[0]
-    const activeToday = users.filter(u => new Date(u.lastSeen).toISOString().split('T')[0] === todayStr).length
+    const todayStr = now.toISOString().split('T')[0]
+    const activeToday = usersWithStats.filter(u => new Date(u.lastSeen).toISOString().split('T')[0] === todayStr).length
 
-    // User Growth Trend Chart (Cumulative Signups Over 30 Days)
-    const now = new Date()
-    const days = dateRange === '7d' ? 7 : 30
+    // User Growth Trend Chart (Cumulative Signups Over Date Range)
+    const days = dateRange === '24h' ? 1 : dateRange === '7d' ? 7 : 30
     const growthTrend = []
 
     for (let i = days - 1; i >= 0; i--) {
@@ -332,13 +361,13 @@ export default function UserManager() {
       d.setDate(now.getDate() - i)
       const dStr = d.toISOString().split('T')[0]
       const label = d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })
-      const signups = users.filter(u => new Date(u.created_at).toISOString().split('T')[0] === dStr).length
+      const signups = usersWithStats.filter(u => new Date(u.created_at).toISOString().split('T')[0] === dStr).length
       growthTrend.push({ date: label, NewUsers: signups })
     }
 
     // Tier Breakdown Donut Chart
     const tierCounts = {}
-    users.forEach(u => {
+    usersWithStats.forEach(u => {
       tierCounts[u.tier] = (tierCounts[u.tier] || 0) + 1
     })
     const tierBreakdown = Object.entries(tierCounts).map(([name, value]) => ({
@@ -348,12 +377,12 @@ export default function UserManager() {
     }))
 
     // Top Most Active Users Bar Chart
-    const topActiveUsers = [...users]
+    const topActiveUsers = [...usersWithStats]
       .sort((a, b) => b.eventsCount - a.eventsCount)
       .slice(0, 6)
       .map(u => {
         const nameInfo = userNames[u.id]
-        const displayName = nameInfo?.displayName || `User #${u.id.slice(0, 6)}`
+        const displayName = (typeof nameInfo === 'object' ? nameInfo?.displayName : nameInfo) || `User #${u.id.slice(0, 6)}`
         return {
           name: displayName.length > 18 ? displayName.substring(0, 18) + '...' : displayName,
           events: u.eventsCount,
@@ -363,21 +392,23 @@ export default function UserManager() {
 
     return {
       totalUsers, activeUsers, suspendedUsers, proUsers, activeToday,
-      growthTrend, tierBreakdown, topActiveUsers
+      growthTrend, tierBreakdown, topActiveUsers, usersWithStats
     }
   }, [users, dateRange, userNames])
 
-  const filteredUsers = users.filter(u => {
-    const profile = userNames[u.id]
-    const displayName = (profile?.displayName || '').toLowerCase()
-    const email = (profile?.email || '').toLowerCase()
-    const query = searchQuery.toLowerCase().trim()
+  const filteredUsers = useMemo(() => {
+    return (insights.usersWithStats || users).filter(u => {
+      const profile = userNames[u.id]
+      const displayName = ((typeof profile === 'object' ? profile?.displayName : profile) || '').toLowerCase()
+      const email = ((typeof profile === 'object' ? profile?.email : u.email) || '').toLowerCase()
+      const query = searchQuery.toLowerCase().trim()
 
-    return !query || u.id.toLowerCase().includes(query) ||
-      u.tier.toLowerCase().includes(query) ||
-      displayName.includes(query) ||
-      email.includes(query)
-  })
+      return !query || u.id.toLowerCase().includes(query) ||
+        u.tier.toLowerCase().includes(query) ||
+        displayName.includes(query) ||
+        email.includes(query)
+    })
+  }, [insights.usersWithStats, users, userNames, searchQuery])
 
   return (
     <div className="animate-in">
@@ -389,13 +420,13 @@ export default function UserManager() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div className="range-selector">
-            {['7d', '30d'].map(r => (
+            {['24h', '7d', '30d', 'all'].map(r => (
               <button
                 key={r}
                 className={`range-btn ${dateRange === r ? 'active' : ''}`}
                 onClick={() => setDateRange(r)}
               >
-                {r === '7d' ? 'Last 7 Days' : 'Last 30 Days'}
+                {r === '24h' ? '24 Hours' : r === '7d' ? 'Last 7 Days' : r === '30d' ? 'Last 30 Days' : 'All Time'}
               </button>
             ))}
           </div>
