@@ -4,7 +4,7 @@ import LoadingScreen from '../components/LoadingScreen'
 import {
   Users, UserCheck, ShieldAlert, ShieldCheck, Mail, Search,
   Filter, Calendar, ExternalLink, AlertTriangle, ArrowUpRight, Lock, Key, RefreshCw, Shield, Award, Ban,
-  TrendingUp, Activity, CheckCircle, Eye, FileText, Share2, Layers, Trash2
+  TrendingUp, Activity, CheckCircle, Eye, FileText, Share2, Layers, Trash2, Zap
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -49,6 +49,44 @@ export default function UserManager() {
   const [deletingUserId, setDeletingUserId] = useState(null)
   const [savingTier, setSavingTier] = useState(false)
   const [dateRange, setDateRange] = useState('30d') // '7d' or '30d'
+  const [freeTrialEnabled, setFreeTrialEnabled] = useState(true)
+  const [togglingTrial, setTogglingTrial] = useState(false)
+  const [trialToast, setTrialToast] = useState(null)
+
+  const loadTrialStatus = async () => {
+    try {
+      const { data, error } = await supabase.rpc('admin_get_system_config')
+      if (!error && Array.isArray(data)) {
+        const row = data.find(r => r.key === 'free_trial_on_signup')
+        if (row) {
+          setFreeTrialEnabled(row.value !== 'false')
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch trial status:', err)
+    }
+  }
+
+  const handleToggleFreeTrial = async () => {
+    try {
+      setTogglingTrial(true)
+      const nextVal = freeTrialEnabled ? 'false' : 'true'
+      const { error } = await supabase.rpc('admin_upsert_system_config', {
+        config_key: 'free_trial_on_signup',
+        config_value: nextVal,
+        config_message: 'Enable 1-month free Pro trial on new user signup/login'
+      })
+      if (error) throw error
+      setFreeTrialEnabled(nextVal === 'true')
+      setTrialToast(nextVal === 'true' ? '1-Month Free Trial is now OPEN for new signups/logins' : '1-Month Free Trial is now CLOSED for new signups/logins')
+      setTimeout(() => setTrialToast(null), 3500)
+    } catch (err) {
+      console.error('Failed to update free trial policy:', err)
+      alert('Failed to update trial setting: ' + (err.message || err))
+    } finally {
+      setTogglingTrial(false)
+    }
+  }
 
   const handleDeleteUser = async (userObj) => {
     if (!userObj) return
@@ -89,6 +127,7 @@ export default function UserManager() {
 
   useEffect(() => {
     loadUsers()
+    loadTrialStatus()
   }, [])
 
   async function loadUsers() {
@@ -484,6 +523,71 @@ export default function UserManager() {
           <div className="metric-subtext">{insights.activeUsers} active accounts</div>
         </div>
       </div>
+
+      {/* ── FREE TRIAL ON SIGNUP GOVERNANCE CARD ───────────────────────────── */}
+      <div style={{
+        margin: '20px 0', padding: '16px 20px', borderRadius: 'var(--radius-md, 12px)',
+        background: freeTrialEnabled ? 'linear-gradient(135deg, rgba(254, 243, 199, 0.45), rgba(238, 242, 255, 0.6))' : 'var(--bg-secondary, #f8fafc)',
+        border: `1.5px solid ${freeTrialEnabled ? '#fde68a' : 'var(--border-color, #e2e8f0)'}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
+        boxShadow: freeTrialEnabled ? '0 4px 15px rgba(245, 158, 11, 0.08)' : 'none'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: freeTrialEnabled ? 'linear-gradient(135deg, #f59e0b, #d97706)' : '#64748b',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0
+          }}>
+            <Zap size={22} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ fontSize: '0.98rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                1-Month Free Pro Trial Policy on New Login
+              </h3>
+              <span className={`badge ${freeTrialEnabled ? 'badge-green' : 'badge-red'}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                {freeTrialEnabled ? '⚡ TRIAL OPEN (ACTIVE)' : '🔒 TRIAL CLOSED (DISABLED)'}
+              </span>
+            </div>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '3px 0 0' }}>
+              {freeTrialEnabled
+                ? 'New users logging in or registering automatically receive 30 days of free Pro tier access.'
+                : 'Free trial is currently closed. New signups/logins are assigned directly to the standard Free tier.'}
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            className={`btn ${freeTrialEnabled ? 'btn-danger' : 'btn-primary'}`}
+            onClick={handleToggleFreeTrial}
+            disabled={togglingTrial}
+            style={{
+              borderRadius: 'var(--radius-full, 9999px)', padding: '8px 18px', fontWeight: 700, fontSize: '0.8rem',
+              background: freeTrialEnabled ? 'var(--red, #ef4444)' : 'var(--accent-primary, #6366f1)', color: '#fff', border: 'none', cursor: 'pointer'
+            }}
+          >
+            {togglingTrial ? (
+              <RefreshCw size={14} className="animate-spin" />
+            ) : freeTrialEnabled ? (
+              <>🔒 Close 1-Month Free Trial</>
+            ) : (
+              <>⚡ Open 1-Month Free Trial</>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {trialToast && (
+        <div style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 999,
+          background: '#0f172a', color: '#fff', padding: '12px 20px', borderRadius: 10,
+          display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 10px 25px rgba(0,0,0,0.2)', fontSize: '0.85rem'
+        }}>
+          <CheckCircle size={16} color="#10b981" />
+          {trialToast}
+        </div>
+      )}
 
       {/* ── SECTION 2: USER GROWTH TREND CHART ───────────────────────────── */}
       <div className="table-card" style={{ padding: 24, marginBottom: 24 }}>

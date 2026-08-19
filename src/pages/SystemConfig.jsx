@@ -5,7 +5,7 @@ import {
   Settings, ToggleLeft, ToggleRight, RefreshCw, Save,
   LogIn, UserPlus, LayoutDashboard, AlertTriangle,
   CheckCircle, XCircle, Clock, Shield, Code, Eye,
-  Wand2, FileCode, Copy, Check, CreditCard, Tag
+  Wand2, FileCode, Copy, Check, CreditCard, Tag, Zap
 } from 'lucide-react'
 
 // Service definitions with metadata
@@ -39,6 +39,16 @@ const SERVICE_DEFINITIONS = [
     bgColor: '#ecfdf5',
     borderColor: '#a7f3d0',
     criticalWarning: 'Disabling the user panel will show a maintenance screen to all logged-in users. Login & Signup will still work.'
+  },
+  {
+    key: 'free_trial_on_signup',
+    label: '1-Month Free Trial (New Login/Signup)',
+    description: 'Controls whether new users automatically receive a 30-day Pro trial when registering or logging in for the first time.',
+    icon: Zap,
+    color: '#f59e0b',
+    bgColor: '#fef3c7',
+    borderColor: '#fde68a',
+    criticalWarning: 'Closing the 1-month free trial will assign new logins/signups directly to the standard Free tier without 30-day Pro trial benefits.'
   }
 ]
 
