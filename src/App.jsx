@@ -1,17 +1,18 @@
-import { Component, useState, useEffect, useLayoutEffect } from 'react'
+import { Component, useState, useEffect, useLayoutEffect, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext'
 import NetworkStatusBanner from './components/NetworkStatusBanner'
 import LoadingScreen from './components/LoadingScreen'
-import Overview from './pages/Overview'
-import AnalyticsStream from './pages/AnalyticsStream'
-import ErrorInspector from './pages/ErrorInspector'
-import SupportTickets from './pages/SupportTickets'
-import UserManager from './pages/UserManager'
-import AccountsFinance from './pages/AccountsFinance'
-import Governance from './pages/Governance'
-import SystemConfig from './pages/SystemConfig'
-import Login from './pages/Login'
+
+const Overview = lazy(() => import('./pages/Overview'))
+const AnalyticsStream = lazy(() => import('./pages/AnalyticsStream'))
+const ErrorInspector = lazy(() => import('./pages/ErrorInspector'))
+const SupportTickets = lazy(() => import('./pages/SupportTickets'))
+const UserManager = lazy(() => import('./pages/UserManager'))
+const AccountsFinance = lazy(() => import('./pages/AccountsFinance'))
+const Governance = lazy(() => import('./pages/Governance'))
+const SystemConfig = lazy(() => import('./pages/SystemConfig'))
+const Login = lazy(() => import('./pages/Login'))
 import {
   LayoutDashboard, Activity, AlertTriangle, MessageSquare,
   Users, ShieldCheck, LogOut, Shield, ExternalLink, RefreshCw, Wallet, Sliders,
@@ -217,17 +218,19 @@ function AdminLayout() {
         </header>
 
         <div className="admin-content">
-          <Routes>
-            <Route path="/" element={<Overview />} />
-            <Route path="/analytics" element={<AnalyticsStream />} />
-            <Route path="/accounts" element={<AccountsFinance />} />
-            <Route path="/errors" element={<ErrorInspector />} />
-            <Route path="/tickets" element={<SupportTickets />} />
-            <Route path="/users" element={<UserManager />} />
-            <Route path="/governance" element={<Governance />} />
-            <Route path="/system-config" element={<SystemConfig />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <Suspense fallback={<LoadingScreen label="Loading section..." fullScreen={false} />}>
+            <Routes>
+              <Route path="/" element={<Overview />} />
+              <Route path="/analytics" element={<AnalyticsStream />} />
+              <Route path="/accounts" element={<AccountsFinance />} />
+              <Route path="/errors" element={<ErrorInspector />} />
+              <Route path="/tickets" element={<SupportTickets />} />
+              <Route path="/users" element={<UserManager />} />
+              <Route path="/governance" element={<Governance />} />
+              <Route path="/system-config" element={<SystemConfig />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
         </div>
       </main>
 
@@ -325,17 +328,19 @@ export default function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <AdminAuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/*"
-              element={
-                <AdminProtectedRoute>
-                  <AdminLayout />
-                </AdminProtectedRoute>
-              }
-            />
-          </Routes>
+          <Suspense fallback={<LoadingScreen label="Loading..." fullScreen={true} />}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route
+                path="/*"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminLayout />
+                  </AdminProtectedRoute>
+                }
+              />
+            </Routes>
+          </Suspense>
         </AdminAuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

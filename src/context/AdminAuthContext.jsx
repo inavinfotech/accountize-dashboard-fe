@@ -10,12 +10,18 @@ export function AdminAuthProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  const checkAdminRole = (userObj) => {
+  const checkAdminRole = async (userObj) => {
     if (!userObj) return false
-    // Checks if user metadata or app metadata contains is_admin flag, or email is explicit admin
-    const isMetaAdmin = userObj.user_metadata?.is_admin === true || userObj.app_metadata?.is_admin === true
+    try {
+      // Check server-side is_admin() database function or app_metadata
+      const { data, error } = await supabase.rpc('is_admin')
+      if (!error && data === true) return true
+    } catch {
+      // ignore rpc errors
+    }
+    const isAppAdmin = userObj.app_metadata?.is_admin === true
     const isOwnerEmail = userObj.email?.endsWith('@inexarum.com') || userObj.email?.endsWith('@inexarum.in') || userObj.email === 'admin@accountize.app'
-    return isMetaAdmin || isOwnerEmail
+    return isAppAdmin || isOwnerEmail
   }
 
   useEffect(() => {
@@ -25,7 +31,8 @@ export function AdminAuthProvider({ children }) {
         setSession(session)
         const currentUser = session?.user ?? null
         setUser(currentUser)
-        setIsAdmin(checkAdminRole(currentUser))
+        const adminStatus = await checkAdminRole(currentUser)
+        setIsAdmin(adminStatus)
       } catch (err) {
         console.error('[AdminAuth] Error checking session:', err)
       } finally {
@@ -35,11 +42,12 @@ export function AdminAuthProvider({ children }) {
 
     getInitialSession()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session)
       const currentUser = session?.user ?? null
       setUser(currentUser)
-      setIsAdmin(checkAdminRole(currentUser))
+      const adminStatus = await checkAdminRole(currentUser)
+      setIsAdmin(adminStatus)
       setLoading(false)
     })
 
@@ -51,7 +59,8 @@ export function AdminAuthProvider({ children }) {
   const signInAdmin = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
-    if (!checkAdminRole(data.user)) {
+    const adminStatus = await checkAdminRole(data.user)
+    if (!adminStatus) {
       await supabase.auth.signOut()
       throw new Error('Access Denied: Account does not possess Super Admin privileges.')
     }
